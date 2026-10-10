@@ -81,12 +81,12 @@ export function SetEditor() {
 
   async function handleExportJSON() {
     const data = await exportSet(setId!);
-    downloadJSON(data, `${data.sets[0]?.title || "flashcards"}.json`);
+    downloadJSON(data, `${data.sets[0]?.title || "nativedeck"}.json`);
   }
 
   async function handleExportCSV() {
     if (!cards) return;
-    downloadCSV(set?.title ?? "flashcards", cards);
+    downloadCSV(set?.title ?? "nativedeck", cards);
   }
 
   return (

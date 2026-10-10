@@ -1,8 +1,8 @@
 {
-  "name": "flashcard-local-app",
+  "name": "nativedeck",
   "private": true,
   "version": "0.1.0",
-  "description": "A local-only flashcard app with study, quiz, and spaced-practice modes.",
+  "description": "NativeDeck — a local-only flashcard app with study, quiz, and spaced-practice modes.",
   "author": "Anna Franz",
   "type": "module",
   "main": "electron/main.cjs",
@@ -40,8 +40,8 @@
     "vite": "^8.3.0"
   },
   "build": {
-    "appId": "com.annacfranz.flashcards",
-    "productName": "Flashcards",
+    "appId": "com.annacfranz.nativedeck",
+    "productName": "NativeDeck",
     "directories": {
       "output": "release"
     },
@@ -61,7 +61,7 @@
       {
         "provider": "github",
         "owner": "afranz29",
-        "repo": "flashcard-local-app"
+        "repo": "NativeDeck-local-flashcard-app"
       }
     ]
   }

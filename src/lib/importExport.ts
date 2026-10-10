@@ -50,7 +50,7 @@ export function downloadCSV(setTitle: string, cards: Card[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${setTitle || "flashcards"}.csv`;
+  a.download = `${setTitle || "nativedeck"}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

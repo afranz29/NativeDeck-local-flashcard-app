@@ -70,7 +70,7 @@ export function Library() {
 
   async function handleExportAll() {
     const data = await exportLibrary();
-    downloadJSON(data, "flashcards-library.json");
+    downloadJSON(data, "nativedeck-library.json");
   }
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
