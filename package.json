@@ -1,7 +1,7 @@
 {
   "name": "nativedeck",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "NativeDeck — a local-only flashcard app with study, quiz, and spaced-practice modes.",
   "author": "Anna Franz",
   "type": "module",
@@ -55,7 +55,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": false
     },
     "publish": [
       {

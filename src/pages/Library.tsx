@@ -8,7 +8,10 @@ import { SetCard } from "../components/SetCard";
 export function Library() {
   const navigate = useNavigate();
   const sets = useLiveQuery(() => db.sets.orderBy("updatedAt").reverse().toArray(), []);
-  const folders = useLiveQuery(() => db.folders.orderBy("name").toArray(), []);
+  const foldersRaw = useLiveQuery(() => db.folders.toArray(), []);
+  const folders = foldersRaw
+    ? [...foldersRaw].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name))
+    : undefined;
   const cardCounts = useLiveQuery(async () => {
     const cards = await db.cards.toArray();
     const counts = new Map<string, number>();
@@ -43,7 +46,24 @@ export function Library() {
   async function createFolder() {
     const id = newId();
     const now = Date.now();
-    await db.folders.add({ id, name: "New folder", createdAt: now, updatedAt: now });
+    await db.folders.add({
+      id,
+      name: "New folder",
+      order: folders?.length ?? 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  async function reorderFolders(draggedId: string, dropId: string) {
+    if (!folders || draggedId === dropId) return;
+    const fromIndex = folders.findIndex((f) => f.id === draggedId);
+    const toIndex = folders.findIndex((f) => f.id === dropId);
+    if (fromIndex === -1 || toIndex === -1) return;
+    const reordered = [...folders];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    await Promise.all(reordered.map((f, i) => db.folders.update(f.id, { order: i })));
   }
 
   async function renameFolder(id: string, name: string) {
@@ -64,6 +84,11 @@ export function Library() {
   function handleDrop(e: React.DragEvent, folderId: string | undefined) {
     e.preventDefault();
     setDragOverTarget(null);
+    const draggedFolderId = e.dataTransfer.getData("application/x-folder-id");
+    if (draggedFolderId && folderId) {
+      reorderFolders(draggedFolderId, folderId);
+      return;
+    }
     const setId = e.dataTransfer.getData("text/plain");
     if (setId) moveSetToFolder(setId, folderId);
   }
@@ -223,6 +248,7 @@ export function Library() {
               count={folderSets.length}
               onRename={(name) => renameFolder(folder.id, name)}
               onDelete={() => deleteFolder(folder)}
+              onDragStart={(e) => e.dataTransfer.setData("application/x-folder-id", folder.id)}
             />
             {folderSets.length === 0 ? (
               <p className="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">
@@ -286,11 +312,13 @@ function FolderHeader({
   count,
   onRename,
   onDelete,
+  onDragStart,
 }: {
   folder: Folder;
   count: number;
   onRename: (name: string) => void;
   onDelete: () => void;
+  onDragStart: (e: React.DragEvent) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(folder.name);
@@ -302,6 +330,15 @@ function FolderHeader({
 
   return (
     <div className="flex items-center justify-between gap-3">
+      <div
+        draggable
+        onDragStart={onDragStart}
+        aria-label="Drag to reorder folder"
+        title="Drag to reorder"
+        className="shrink-0 cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-400 dark:hover:text-gray-500"
+      >
+        ⠿
+      </div>
       {editing ? (
         <input
           autoFocus

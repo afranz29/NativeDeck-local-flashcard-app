@@ -3,6 +3,8 @@ import Dexie, { type EntityTable } from "dexie";
 export interface Folder {
   id: string;
   name: string;
+  /** Drag-to-reorder position. Optional, non-indexed — absent sorts last. */
+  order?: number;
   createdAt: number;
   updatedAt: number;
 }
