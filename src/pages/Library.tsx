@@ -70,6 +70,10 @@ export function Library() {
     await db.folders.update(id, { name: name.trim() || "Untitled folder", updatedAt: Date.now() });
   }
 
+  async function toggleFolderCollapsed(folder: Folder) {
+    await db.folders.update(folder.id, { collapsed: !folder.collapsed });
+  }
+
   async function deleteFolder(folder: Folder) {
     if (!confirm(`Delete folder "${folder.name}"? Its sets will move to "No folder", not be deleted.`)) return;
     // folderId isn't an indexed field, so filter the already-loaded sets
@@ -249,23 +253,25 @@ export function Library() {
               onRename={(name) => renameFolder(folder.id, name)}
               onDelete={() => deleteFolder(folder)}
               onDragStart={(e) => e.dataTransfer.setData("application/x-folder-id", folder.id)}
+              onToggleCollapsed={() => toggleFolderCollapsed(folder)}
             />
-            {folderSets.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">
-                Empty — drag a set here to add it.
-              </p>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-                {folderSets.map((set) => (
-                  <SetCard
-                    key={set.id}
-                    set={set}
-                    cardCount={cardCounts?.get(set.id) ?? 0}
-                    onDelete={() => deleteSet(set.id, set.title)}
-                  />
-                ))}
-              </div>
-            )}
+            {!folder.collapsed &&
+              (folderSets.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">
+                  Empty, drag a set here to add it.
+                </p>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+                  {folderSets.map((set) => (
+                    <SetCard
+                      key={set.id}
+                      set={set}
+                      cardCount={cardCounts?.get(set.id) ?? 0}
+                      onDelete={() => deleteSet(set.id, set.title)}
+                    />
+                  ))}
+                </div>
+              ))}
           </div>
         );
       })}
@@ -313,12 +319,14 @@ function FolderHeader({
   onRename,
   onDelete,
   onDragStart,
+  onToggleCollapsed,
 }: {
   folder: Folder;
   count: number;
   onRename: (name: string) => void;
   onDelete: () => void;
   onDragStart: (e: React.DragEvent) => void;
+  onToggleCollapsed: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(folder.name);
@@ -330,36 +338,48 @@ function FolderHeader({
 
   return (
     <div className="flex items-center justify-between gap-3">
-      <div
-        draggable
-        onDragStart={onDragStart}
-        aria-label="Drag to reorder folder"
-        title="Drag to reorder"
-        className="shrink-0 cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-400 dark:hover:text-gray-500"
-      >
-        ⠿
-      </div>
-      {editing ? (
-        <input
-          autoFocus
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => e.key === "Enter" && commit()}
-          className="font-semibold bg-transparent outline-none border-b border-gray-300 dark:border-gray-700"
-        />
-      ) : (
-        <button
-          onClick={() => {
-            setName(folder.name);
-            setEditing(true);
-          }}
-          className="font-semibold hover:underline text-left"
+      <div className="flex items-center gap-2 min-w-0">
+        <div
+          draggable
+          onDragStart={onDragStart}
+          aria-label="Drag to reorder folder"
+          title="Drag to reorder"
+          className="shrink-0 cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-400 dark:hover:text-gray-500"
         >
-          📁 {folder.name}
+          ⠿
+        </div>
+        <button
+          onClick={onToggleCollapsed}
+          aria-label={folder.collapsed ? "Expand folder" : "Collapse folder"}
+          title={folder.collapsed ? "Expand folder" : "Collapse folder"}
+          className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-transform"
+        >
+          <span className={`inline-block transition-transform ${folder.collapsed ? "-rotate-90" : ""}`}>
+            ▾
+          </span>
         </button>
-      )}
-      <div className="flex items-center gap-3">
+        {editing ? (
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => e.key === "Enter" && commit()}
+            className="font-semibold bg-transparent outline-none border-b border-gray-300 dark:border-gray-700"
+          />
+        ) : (
+          <button
+            onClick={() => {
+              setName(folder.name);
+              setEditing(true);
+            }}
+            className="font-semibold hover:underline text-left truncate"
+          >
+            📁 {folder.name}
+          </button>
+        )}
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
         <span className="text-xs text-gray-400 dark:text-gray-500">{count} set(s)</span>
         <button
           onClick={onDelete}

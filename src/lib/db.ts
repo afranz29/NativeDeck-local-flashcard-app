@@ -5,6 +5,8 @@ export interface Folder {
   name: string;
   /** Drag-to-reorder position. Optional, non-indexed — absent sorts last. */
   order?: number;
+  /** Absent/false = expanded. Optional, non-indexed. */
+  collapsed?: boolean;
   createdAt: number;
   updatedAt: number;
 }
