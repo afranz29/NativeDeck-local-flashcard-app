@@ -22,6 +22,8 @@ export function SetEditor() {
     [setId]
   );
 
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
@@ -69,6 +71,21 @@ export function SetEditor() {
   async function deleteCard(id: string) {
     await db.cards.delete(id);
     await db.sets.update(setId!, { updatedAt: Date.now() });
+  }
+
+  async function reorderCards(dropId: string) {
+    const from = draggedId;
+    setDraggedId(null);
+    setDragOverId(null);
+    if (!cards || !from || from === dropId) return;
+    const fromIndex = cards.findIndex((c) => c.id === from);
+    const toIndex = cards.findIndex((c) => c.id === dropId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const reordered = [...cards];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    await Promise.all(reordered.map((c, i) => db.cards.update(c.id, { order: i })));
   }
 
   async function handlePasteImport() {
@@ -252,6 +269,17 @@ export function SetEditor() {
             card={card}
             onChange={(fields) => updateCard(card.id, fields)}
             onDelete={() => deleteCard(card.id)}
+            onDragStart={() => setDraggedId(card.id)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (draggedId && draggedId !== card.id) setDragOverId(card.id);
+            }}
+            onDrop={() => reorderCards(card.id)}
+            onDragEnd={() => {
+              setDraggedId(null);
+              setDragOverId(null);
+            }}
+            isDragOver={dragOverId === card.id}
           />
         ))}
       </div>

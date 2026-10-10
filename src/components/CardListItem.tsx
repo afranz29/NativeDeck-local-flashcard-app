@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import { CardFieldsEditor } from "./CardFieldsEditor";
 import { CardFieldsReadout, FavoriteButton, MasteryRing } from "./CardReadout";
 import type { Card } from "../lib/db";
@@ -8,11 +8,21 @@ export function CardListItem({
   card,
   onChange,
   onDelete,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  isDragOver,
 }: {
   index: number;
   card: Card;
   onChange: (fields: Partial<Card>) => void;
   onDelete: () => void;
+  onDragStart: () => void;
+  onDragOver: (e: DragEvent) => void;
+  onDrop: () => void;
+  onDragEnd: () => void;
+  isDragOver: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [term, setTerm] = useState(card.term);
@@ -34,7 +44,26 @@ export function CardListItem({
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 flex gap-3">
+    <div
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`rounded-xl border bg-white dark:bg-gray-900 p-4 flex gap-3 transition-colors ${
+        isDragOver
+          ? "border-sky-400 dark:border-sky-500"
+          : "border-gray-200 dark:border-gray-800"
+      }`}
+    >
+      <div
+        draggable
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        aria-label="Drag to reorder"
+        title="Drag to reorder"
+        className="shrink-0 self-stretch flex items-center cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-400 dark:hover:text-gray-500"
+      >
+        ⠿
+      </div>
+
       <FavoriteButton
         favorite={card.favorite ?? false}
         onToggle={() => onChange({ favorite: !card.favorite })}
