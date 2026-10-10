@@ -6,7 +6,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: "NativeDeck",
+    title: `NativeDeck v${app.getVersion()}`,
     autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
@@ -55,6 +55,12 @@ function createWindow() {
     }
 
     if (menu.items.length > 0) menu.popup();
+  });
+
+  // electron syncs the window title to the page's <title> tag on load by
+  // default, which would overwrite the version-tagged title set above.
+  win.on("page-title-updated", (event) => {
+    event.preventDefault();
   });
 
   win.loadFile(path.join(__dirname, "../dist/index.html"));
