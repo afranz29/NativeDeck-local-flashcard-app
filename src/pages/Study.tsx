@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../lib/db";
+import { useStudyCards } from "../lib/studyCards";
 import { Markdown } from "../components/Markdown";
 import type { Card } from "../lib/db";
 
@@ -15,12 +16,14 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export function Study() {
-  const { setId } = useParams<{ setId: string }>();
+  const { setId, folderId } = useParams<{ setId?: string; folderId?: string }>();
   const set = useLiveQuery(() => (setId ? db.sets.get(setId) : undefined), [setId]);
-  const allCards = useLiveQuery(
-    () => (setId ? db.cards.where("setId").equals(setId).sortBy("order") : []),
-    [setId]
-  );
+  const folder = useLiveQuery(() => (folderId ? db.folders.get(folderId) : undefined), [folderId]);
+  const { cards: allCards } = useStudyCards(setId, folderId);
+
+  const title = setId ? set?.title : folder?.name;
+  const backTo = setId ? `/sets/${setId}` : "/";
+  const addCardsTo = setId ? `/sets/${setId}/edit` : "/";
 
   const [queue, setQueue] = useState<Card[]>([]);
   const [stillLearning, setStillLearning] = useState<Card[]>([]);
@@ -93,17 +96,20 @@ export function Study() {
     return Math.round((index / queue.length) * 100);
   }, [index, queue.length, started]);
 
-  if (set === undefined || allCards === undefined) return <p>Loading…</p>;
-  if (set === null || !setId) return <p>Set not found.</p>;
+  if (!setId && !folderId) return <p>Not found.</p>;
+  if ((setId && set === undefined) || (folderId && folder === undefined) || allCards === undefined) {
+    return <p>Loading…</p>;
+  }
+  if ((setId && set === null) || (folderId && folder === null)) return <p>Not found.</p>;
 
   if (total === 0) {
     return (
       <div className="text-center py-16">
         <p className="text-gray-500 dark:text-gray-400 mb-4">
-          This set has no cards yet.
+          {setId ? "This set has no cards yet." : "This folder has no cards yet."}
         </p>
-        <Link to={`/sets/${setId}/edit`} className="text-sky-500 dark:text-sky-400 hover:underline">
-          Add some cards
+        <Link to={addCardsTo} className="text-sky-500 dark:text-sky-400 hover:underline">
+          {setId ? "Add some cards" : "Back to library"}
         </Link>
       </div>
     );
@@ -112,13 +118,10 @@ export function Study() {
   if (!started) {
     return (
       <div className="max-w-md mx-auto text-center py-12">
-        <Link
-          to={`/sets/${setId}`}
-          className="inline-block text-sm text-gray-500 hover:underline mb-6"
-        >
-          ← Back to set
+        <Link to={backTo} className="inline-block text-sm text-gray-500 hover:underline mb-6">
+          {setId ? "← Back to set" : "← Back to library"}
         </Link>
-        <h1 className="text-2xl font-bold mb-1">{set.title}</h1>
+        <h1 className="text-2xl font-bold mb-1">{title}</h1>
         <p className="text-gray-500 dark:text-gray-400 mb-6">{total} card(s)</p>
         <label className="flex items-center justify-center gap-2 mb-6 text-sm">
           <input
@@ -161,10 +164,10 @@ export function Study() {
             Restart full set
           </button>
           <Link
-            to={`/sets/${setId}`}
+            to={backTo}
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            Back to set
+            {setId ? "Back to set" : "Back to library"}
           </Link>
         </div>
       </div>
@@ -174,7 +177,7 @@ export function Study() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="flex items-center justify-between mb-3">
-        <Link to={`/sets/${setId}`} className="text-sm text-gray-500 hover:underline">
+        <Link to={backTo} className="text-sm text-gray-500 hover:underline">
           ← Exit
         </Link>
         <span className="text-sm text-gray-500">

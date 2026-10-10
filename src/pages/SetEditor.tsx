@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, newId, type Card } from "../lib/db";
@@ -30,6 +30,20 @@ export function SetEditor() {
   const [termSeparator, setTermSeparator] = useState("auto");
   const [cardSeparator, setCardSeparator] = useState("auto");
   const delimiters: ParseDelimiters = { termSeparator, cardSeparator };
+
+  // mirrored locally so typing stays in sync with the input's cursor.
+  // binding value directly to the live Dexie query would round-trip every
+  // keystroke through IndexedDB and back, desyncing the controlled value
+  // from what was actually typed and resetting the cursor to the end.
+  const [title, setTitle] = useState(set?.title ?? "");
+  const [description, setDescription] = useState(set?.description ?? "");
+
+  useEffect(() => {
+    if (set) {
+      setTitle(set.title);
+      setDescription(set.description);
+    }
+  }, [setId, !!set]);
 
   if (set === undefined) return <p>Loading…</p>;
   if (set === null || !setId) return <p>Set not found.</p>;
@@ -116,14 +130,20 @@ export function SetEditor() {
       </button>
 
       <input
-        value={set.title}
-        onChange={(e) => updateSet({ title: e.target.value })}
+        value={title}
+        onChange={(e) => {
+          setTitle(e.target.value);
+          updateSet({ title: e.target.value });
+        }}
         placeholder="Set title"
         className="text-2xl font-bold w-full bg-transparent outline-none mb-2 border-b border-transparent focus:border-gray-300 dark:focus:border-gray-700"
       />
       <textarea
-        value={set.description}
-        onChange={(e) => updateSet({ description: e.target.value })}
+        value={description}
+        onChange={(e) => {
+          setDescription(e.target.value);
+          updateSet({ description: e.target.value });
+        }}
         placeholder="Description (optional)"
         rows={2}
         className="w-full bg-transparent outline-none text-sm text-gray-500 dark:text-gray-400 resize-none mb-4"

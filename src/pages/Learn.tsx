@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, newId, type Card } from "../lib/db";
+import { useStudyCards } from "../lib/studyCards";
 import { Markdown } from "../components/Markdown";
 import {
   buildQuestion,
@@ -22,12 +23,14 @@ function feedbackClass(value: string, correctValue: string, selected: string | n
 }
 
 export function Learn() {
-  const { setId } = useParams<{ setId: string }>();
+  const { setId, folderId } = useParams<{ setId?: string; folderId?: string }>();
   const set = useLiveQuery(() => (setId ? db.sets.get(setId) : undefined), [setId]);
-  const allCards = useLiveQuery(
-    () => (setId ? db.cards.where("setId").equals(setId).sortBy("order") : []),
-    [setId]
-  );
+  const folder = useLiveQuery(() => (folderId ? db.folders.get(folderId) : undefined), [folderId]);
+  const { cards: allCards, setIds } = useStudyCards(setId, folderId);
+
+  const title = setId ? set?.title : folder?.name;
+  const backTo = setId ? `/sets/${setId}` : "/";
+  const addCardsTo = setId ? `/sets/${setId}/edit` : "/";
 
   const [direction, setDirection] = useState<Direction>("random");
   const [questionTypes, setQuestionTypes] = useState<QuestionType[]>(["multiple-choice"]);
@@ -52,8 +55,11 @@ export function Learn() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, queue, roundCards, direction, questionTypes]);
 
-  if (set === undefined || allCards === undefined) return <p>Loading…</p>;
-  if (set === null || !setId) return <p>Set not found.</p>;
+  if (!setId && !folderId) return <p>Not found.</p>;
+  if ((setId && set === undefined) || (folderId && folder === undefined) || allCards === undefined) {
+    return <p>Loading…</p>;
+  }
+  if ((setId && set === null) || (folderId && folder === null)) return <p>Not found.</p>;
 
   const total = allCards.length;
   const notMastered = allCards.filter((c) => (c.masteryStreak ?? 0) < MASTERY_TARGET);
@@ -63,10 +69,10 @@ export function Learn() {
     return (
       <div className="text-center py-16">
         <p className="text-gray-500 dark:text-gray-400 mb-4">
-          This set has no cards yet.
+          {setId ? "This set has no cards yet." : "This folder has no cards yet."}
         </p>
-        <Link to={`/sets/${setId}/edit`} className="text-sky-500 dark:text-sky-400 hover:underline">
-          Add some cards
+        <Link to={addCardsTo} className="text-sky-500 dark:text-sky-400 hover:underline">
+          {setId ? "Add some cards" : "Back to library"}
         </Link>
       </div>
     );
@@ -78,8 +84,8 @@ export function Learn() {
         <p className="text-gray-500 dark:text-gray-400 mb-4">
           Learn mode needs at least 2 cards to generate questions.
         </p>
-        <Link to={`/sets/${setId}/edit`} className="text-sky-500 dark:text-sky-400 hover:underline">
-          Add more cards
+        <Link to={addCardsTo} className="text-sky-500 dark:text-sky-400 hover:underline">
+          {setId ? "Add more cards" : "Back to library"}
         </Link>
       </div>
     );
@@ -131,27 +137,33 @@ export function Learn() {
   }
 
   async function recordSessionSnapshot() {
-    if (!setId || !allCards) return;
-    const mastered = allCards.filter((c) => (c.masteryStreak ?? 0) >= MASTERY_TARGET).length;
-    await db.sessions.add({
-      id: newId(),
-      setId,
-      completedAt: Date.now(),
-      masteredCount: mastered,
-      totalCards: allCards.length,
-    });
+    if (!setIds || !allCards) return;
+    const now = Date.now();
+    // one row per underlying set, so each set's own Stats page stays
+    // accurate even when it was learned as part of a folder session.
+    await Promise.all(
+      setIds.map((id) => {
+        const setCards = allCards.filter((c) => c.setId === id);
+        if (setCards.length === 0) return undefined;
+        const mastered = setCards.filter((c) => (c.masteryStreak ?? 0) >= MASTERY_TARGET).length;
+        return db.sessions.add({
+          id: newId(),
+          setId: id,
+          completedAt: now,
+          masteredCount: mastered,
+          totalCards: setCards.length,
+        });
+      })
+    );
   }
 
   if (!started) {
     return (
       <div className="max-w-md mx-auto text-center py-12">
-        <Link
-          to={`/sets/${setId}`}
-          className="inline-block text-sm text-gray-500 hover:underline mb-6"
-        >
-          ← Back to set
+        <Link to={backTo} className="inline-block text-sm text-gray-500 hover:underline mb-6">
+          {setId ? "← Back to set" : "← Back to library"}
         </Link>
-        <h1 className="text-2xl font-bold mb-1">{set.title}</h1>
+        <h1 className="text-2xl font-bold mb-1">{title}</h1>
         <p className="text-gray-500 dark:text-gray-400 mb-6">
           {allMastered
             ? "🎉 All cards mastered!"
@@ -250,10 +262,10 @@ export function Learn() {
             Back to start
           </button>
           <Link
-            to={`/sets/${setId}`}
+            to={backTo}
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            Back to set
+            {setId ? "Back to set" : "Back to library"}
           </Link>
         </div>
       </div>
@@ -265,7 +277,7 @@ export function Learn() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="flex items-center justify-between mb-3">
-        <Link to={`/sets/${setId}`} className="text-sm text-gray-500 hover:underline">
+        <Link to={backTo} className="text-sm text-gray-500 hover:underline">
           ← Exit
         </Link>
         <span className="text-sm text-gray-500">

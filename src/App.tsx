@@ -17,6 +17,8 @@ function App() {
         <Route path="/sets/:setId/study" element={<Study />} />
         <Route path="/sets/:setId/learn" element={<Learn />} />
         <Route path="/sets/:setId/stats" element={<Stats />} />
+        <Route path="/folders/:folderId/study" element={<Study />} />
+        <Route path="/folders/:folderId/learn" element={<Learn />} />
       </Route>
     </Routes>
   );

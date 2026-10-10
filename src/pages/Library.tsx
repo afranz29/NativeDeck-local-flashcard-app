@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, newId, type Folder } from "../lib/db";
 import { downloadJSON, exportLibrary, importLibraryJSON } from "../lib/importExport";
@@ -381,6 +381,22 @@ function FolderHeader({
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-xs text-gray-400 dark:text-gray-500">{count} set(s)</span>
+        {count > 0 && (
+          <>
+            <Link
+              to={`/folders/${folder.id}/study`}
+              className="text-xs text-sky-600 dark:text-sky-400 hover:underline"
+            >
+              Study
+            </Link>
+            <Link
+              to={`/folders/${folder.id}/learn`}
+              className="text-xs text-sky-600 dark:text-sky-400 hover:underline"
+            >
+              Learn
+            </Link>
+          </>
+        )}
         <button
           onClick={onDelete}
           className="text-xs text-red-600 dark:text-red-400 hover:underline"
