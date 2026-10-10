@@ -4,6 +4,10 @@ A local-only flashcard app, similar to Quizlet, that runs entirely on your machi
 a browser app or a packaged desktop app. No account, no server — everything is stored
 locally (IndexedDB).
 
+Grab the latest Windows installer from the
+[Releases page](https://github.com/afranz29/NativeDeck-local-flashcard-app/releases) —
+no build step required. The installed app updates itself automatically.
+
 ## Features
 
 - **Sets, folders & tags** — organize flashcard sets into flat folders (drag-and-drop),
@@ -27,6 +31,15 @@ locally (IndexedDB).
 - **Dark mode** — light/dark/system theme toggle.
 - **Desktop app** — an Electron build with a Windows installer and automatic updates
   via GitHub Releases (see [Desktop app](#desktop-app) below).
+
+## CI & security
+
+- **CI** (`.github/workflows/ci.yml`) — lint, typecheck, and build on every push/PR to `main`.
+- **CodeQL** (`.github/workflows/codeql.yml`) — static security analysis, on push/PR and weekly.
+- **Dependency audit** (`.github/workflows/audit.yml`) — `npm audit` against production
+  dependencies, on push/PR and weekly.
+- **Dependabot** (`.github/dependabot.yml`) — weekly dependency update PRs for both npm
+  packages and GitHub Actions.
 
 ## Getting started
 

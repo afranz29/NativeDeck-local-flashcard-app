@@ -1,0 +1,31 @@
+name: Dependency audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Mondays at 09:00 UTC
+    - cron: "0 9 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Only fails on vulnerabilities in packages that actually ship to users
+      # (electron-builder's own dev-time deps have known moderate findings
+      # that don't affect the built app).
+      - run: npm audit --omit=dev --audit-level=high
