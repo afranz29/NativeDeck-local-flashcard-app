@@ -22,6 +22,7 @@ export function SetEditor() {
     [setId]
   );
 
+  const [tagInput, setTagInput] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [termSeparator, setTermSeparator] = useState("auto");
@@ -31,8 +32,21 @@ export function SetEditor() {
   if (set === undefined) return <p>Loading…</p>;
   if (set === null || !setId) return <p>Set not found.</p>;
 
-  async function updateSet(fields: Partial<{ title: string; description: string }>) {
+  async function updateSet(fields: Partial<{ title: string; description: string; tags: string[] }>) {
     await db.sets.update(setId!, { ...fields, updatedAt: Date.now() });
+  }
+
+  function addTag() {
+    const value = tagInput.trim().toLowerCase();
+    setTagInput("");
+    if (!value) return;
+    const existing = set?.tags ?? [];
+    if (existing.includes(value)) return;
+    updateSet({ tags: [...existing, value] });
+  }
+
+  function removeTag(tag: string) {
+    updateSet({ tags: (set?.tags ?? []).filter((t) => t !== tag) });
   }
 
   async function createCard(fields: NewCardFields) {
@@ -97,6 +111,36 @@ export function SetEditor() {
         rows={2}
         className="w-full bg-transparent outline-none text-sm text-gray-500 dark:text-gray-400 resize-none mb-4"
       />
+
+      <div className="flex items-center gap-2 flex-wrap mb-6">
+        {(set.tags ?? []).map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-300"
+          >
+            {tag}
+            <button
+              onClick={() => removeTag(tag)}
+              aria-label={`Remove tag ${tag}`}
+              className="hover:text-red-500 font-medium"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addTag();
+            }
+          }}
+          placeholder="+ Add tag"
+          className="px-2.5 py-1 rounded-full border border-dashed border-gray-300 dark:border-gray-700 text-xs outline-none bg-transparent w-24 focus:w-32 transition-all"
+        />
+      </div>
 
       <div className="flex gap-2 flex-wrap mb-6">
         <button

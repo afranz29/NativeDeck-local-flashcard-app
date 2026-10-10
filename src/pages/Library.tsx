@@ -18,6 +18,7 @@ export function Library() {
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null); // folder id, or "unfiled"
+  const [activeTags, setActiveTags] = useState<string[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
 
   async function createSet() {
@@ -92,7 +93,18 @@ export function Library() {
     }
   }
 
-  const unfiledSets = sets?.filter((s) => !s.folderId) ?? [];
+  const allTags = [...new Set((sets ?? []).flatMap((s) => s.tags ?? []))].sort();
+
+  function toggleTag(tag: string) {
+    setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  }
+
+  const visibleSets =
+    activeTags.length === 0
+      ? sets ?? []
+      : (sets ?? []).filter((s) => s.tags?.some((t) => activeTags.includes(t)));
+
+  const unfiledSets = visibleSets.filter((s) => !s.folderId);
 
   return (
     <div>
@@ -159,8 +171,37 @@ export function Library() {
         </div>
       )}
 
+      {allTags.length > 0 && (
+        <div className="flex gap-2 flex-wrap mb-5">
+          {allTags.map((tag) => {
+            const active = activeTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                  active
+                    ? "bg-sky-500 border-sky-500 text-white"
+                    : "border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+              >
+                {tag}
+              </button>
+            );
+          })}
+          {activeTags.length > 0 && (
+            <button
+              onClick={() => setActiveTags([])}
+              className="px-2.5 py-1 rounded-full text-xs text-gray-400 hover:underline"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
       {folders?.map((folder) => {
-        const folderSets = sets?.filter((s) => s.folderId === folder.id) ?? [];
+        const folderSets = visibleSets.filter((s) => s.folderId === folder.id);
         const isDragOver = dragOverTarget === folder.id;
         return (
           <div

@@ -40,6 +40,20 @@ export function Study() {
   const current = queue[index];
   const done = started && queue.length > 0 && index >= queue.length;
 
+  useEffect(() => {
+    if (!started || done) return;
+    function onKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON" || tag === "A") return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        setFlipped((f) => !f);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [started, done]);
+
   function startSession() {
     if (!allCards) return;
     setQueue(shuffled ? shuffle(allCards) : allCards);

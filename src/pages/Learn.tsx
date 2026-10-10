@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Card } from "../lib/db";
+import { db, newId, type Card } from "../lib/db";
 import { Markdown } from "../components/Markdown";
-import { buildQuestion, shuffle, type Direction, type Question, type QuestionType } from "../lib/learn";
-
-const MASTERY_TARGET = 3;
+import {
+  buildQuestion,
+  shuffle,
+  MASTERY_TARGET,
+  type Direction,
+  type Question,
+  type QuestionType,
+} from "../lib/learn";
 
 function feedbackClass(value: string, correctValue: string, selected: string | null): string {
   if (selected === null) {
@@ -117,11 +122,24 @@ export function Learn() {
         const rest = q.slice(1);
         if (isCorrect && newStreak >= MASTERY_TARGET) {
           setMasteredCount((m) => m + 1);
+          if (rest.length === 0) recordSessionSnapshot();
           return rest;
         }
         return [...rest, { ...card, masteryStreak: newStreak }];
       });
     }, 900);
+  }
+
+  async function recordSessionSnapshot() {
+    if (!setId || !allCards) return;
+    const mastered = allCards.filter((c) => (c.masteryStreak ?? 0) >= MASTERY_TARGET).length;
+    await db.sessions.add({
+      id: newId(),
+      setId,
+      completedAt: Date.now(),
+      masteredCount: mastered,
+      totalCards: allCards.length,
+    });
   }
 
   if (!started) {

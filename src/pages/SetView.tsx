@@ -20,10 +20,25 @@ export function SetView() {
     setFlipped(false);
   }, [index]);
 
+  const total = cards?.length ?? 0;
+
+  useEffect(() => {
+    if (total === 0) return;
+    function onKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON" || tag === "A") return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        setFlipped((f) => !f);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [total]);
+
   if (set === undefined || cards === undefined) return <p>Loading…</p>;
   if (set === null || !setId) return <p>Set not found.</p>;
 
-  const total = cards.length;
   const clampedIndex = total === 0 ? 0 : Math.min(index, total - 1);
   const current = cards[clampedIndex];
 
@@ -65,6 +80,12 @@ export function SetView() {
           className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           Edit
+        </Link>
+        <Link
+          to={`/sets/${setId}/stats`}
+          className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          Stats
         </Link>
       </div>
 

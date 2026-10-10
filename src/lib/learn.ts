@@ -1,5 +1,8 @@
 import type { Card } from "./db";
 
+/** Consecutive correct answers needed to consider a card mastered. */
+export const MASTERY_TARGET = 3;
+
 export type Direction = "term-to-def" | "def-to-term" | "random";
 export type QuestionType = "multiple-choice" | "true-false";
 

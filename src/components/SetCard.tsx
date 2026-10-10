@@ -26,6 +26,19 @@ export function SetCard({
       )}
       <p className="text-xs text-gray-400 dark:text-gray-500">{cardCount} card(s)</p>
 
+      {set.tags && set.tags.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap">
+          {set.tags.map((tag) => (
+            <span
+              key={tag}
+              className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[11px] text-gray-500 dark:text-gray-400"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="flex gap-2 mt-2 text-sm">
         <Link
           to={`/sets/${set.id}/study`}

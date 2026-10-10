@@ -5,6 +5,7 @@ import { SetView } from "./pages/SetView";
 import { SetEditor } from "./pages/SetEditor";
 import { Study } from "./pages/Study";
 import { Learn } from "./pages/Learn";
+import { Stats } from "./pages/Stats";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/sets/:setId/edit" element={<SetEditor />} />
         <Route path="/sets/:setId/study" element={<Study />} />
         <Route path="/sets/:setId/learn" element={<Learn />} />
+        <Route path="/sets/:setId/stats" element={<Stats />} />
       </Route>
     </Routes>
   );

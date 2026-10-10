@@ -1,17 +1,24 @@
 {
   "name": "flashcard-local-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "A local-only flashcard app with study, quiz, and spaced-practice modes.",
+  "author": "Anna Franz",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron": "npm run build && electron .",
+    "dist": "npm run build && electron-builder",
+    "release": "npm run build && electron-builder --publish always"
   },
   "dependencies": {
     "dexie": "^4.4.6",
     "dexie-react-hooks": "^4.4.0",
+    "electron-updater": "^6.8.9",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
@@ -25,9 +32,37 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
     "oxlint": "^1.81.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
+  },
+  "build": {
+    "appId": "com.annacfranz.flashcards",
+    "productName": "Flashcards",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "afranz29",
+        "repo": "flashcard-local-app"
+      }
+    ]
   }
 }

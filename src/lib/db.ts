@@ -13,8 +13,19 @@ export interface FlashcardSet {
   description: string;
   /** Optional, non-indexed — sets are filtered by folder client-side. */
   folderId?: string;
+  /** Lowercased, trimmed, deduped. Optional, non-indexed. */
+  tags?: string[];
   createdAt: number;
   updatedAt: number;
+}
+
+/** A snapshot of mastery progress, recorded when a Learn round completes. */
+export interface StudySession {
+  id: string;
+  setId: string;
+  completedAt: number;
+  masteredCount: number;
+  totalCards: number;
 }
 
 export interface Card {
@@ -38,6 +49,7 @@ export const db = new Dexie("FlashcardDB") as Dexie & {
   sets: EntityTable<FlashcardSet, "id">;
   cards: EntityTable<Card, "id">;
   folders: EntityTable<Folder, "id">;
+  sessions: EntityTable<StudySession, "id">;
 };
 
 // Dexie's stores() string only declares INDEXED properties. Adding new
@@ -53,6 +65,10 @@ db.version(1).stores({
 // don't need to be re-listed — Dexie carries them forward automatically.
 db.version(2).stores({
   folders: "id, name, updatedAt",
+});
+
+db.version(3).stores({
+  sessions: "id, setId, completedAt",
 });
 
 export function newId(): string {
